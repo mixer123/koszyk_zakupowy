@@ -113,8 +113,82 @@ def pokaz_produkt():
         # st.write(df_prod)
         if produkt != '-- wybierz produkt --':
             st.dataframe(df_prod, hide_index=True)
-            st.write(f'Produktów jest {ilosc_prod} ')        
-       
+            st.write(f'Produktów jest {ilosc_prod} ')   
+
+'''Maksymalna ilosc produktow'''
+def prod_max_ilosc(prod):
+    ilosc_max = prod['ilosc']
+    return ilosc_max
+
+def koszyk_zakupowy():
+    produkty_list = []   
+    with open("produkt.csv", mode="r", newline="") as csvfile:
+        produkty = csv.reader(csvfile, delimiter=';', quotechar='|')       
+        next(produkty)  # jeśli masz nagłówek w CSV
+        for pr in produkty:
+            nazwa, kategoria, cena, ilosc = pr
+            produkty_list.append({
+                "nazwa": nazwa,
+                "kategoria": kategoria,
+                "cena": float(cena),
+                "ilosc": int(ilosc)
+            })
+
+    # Inicjalizacja koszyka
+    if "koszyk" not in st.session_state:
+        st.session_state.koszyk = {}
+
+    # Lista nazw produktów do selectbox
+    nazwy = [p["nazwa"] for p in produkty_list]
+    produkt = st.selectbox("Wybierz produkt:", nazwy)
+
+    # znajdź produkt w liście
+    prod = next((p for p in produkty_list if p["nazwa"] == produkt), None)
+
+    if prod:
+        # teraz dopiero można ustawić ilość z max_value
+        ilosc = st.number_input(
+            "Ilość:",
+            min_value=1,
+            value=1,
+            max_value=prod_max_ilosc(prod)
+        )
+    else:
+        st.error("Nie znaleziono produktu w bazie!")
+        ilosc = 1
+
+    # Dodanie do koszyka
+    if st.button("➕ Dodaj do koszyka") and prod:
+        wartosc = prod["cena"] * ilosc
+
+        if produkt in st.session_state.koszyk:
+            st.session_state.koszyk[produkt]["ilosc"] += ilosc
+            st.session_state.koszyk[produkt]["wartosc"] += wartosc
+        else:
+            st.session_state.koszyk[produkt] = {
+                "ilosc": ilosc,
+                "cena": prod["cena"],
+                "wartosc": wartosc
+            }
+
+        st.success(f"Dodano {ilosc} x {produkt} do koszyka")
+
+    # Wyświetlenie koszyka
+    if st.button("📋 Pokaż koszyk"):
+        if st.session_state.koszyk:
+            suma = 0
+            for k, v in st.session_state.koszyk.items():
+                st.write(f'{k}: {v["ilosc"]} szt. × {v["cena"]:.2f} zł = {v["wartosc"]:.2f} zł')
+                suma += v["wartosc"]
+            st.write(f"💰 **Suma: {suma:.2f} zł**")
+        else:
+            st.info("Koszyk jest pusty")
+   
+
+
+
+
+         
 
 
 if __name__ == "__main__":
@@ -126,6 +200,8 @@ if __name__ == "__main__":
                 "Wprowadź produkt",               
                 "Pokaz kategorię",
                 "Pokaz produkt",
+                "Dokonaj zakupów",
+               
             ],
         )
 if select == "Wprowadź kategorię":   
@@ -138,6 +214,9 @@ if select == "Pokaz kategorię":
     pokaz_kategoria()
 if select == "Pokaz produkt":
     pokaz_produkt()
+if select == "Dokonaj zakupów":
+    koszyk_zakupowy()
+
 
    
 
