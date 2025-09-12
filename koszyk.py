@@ -76,8 +76,7 @@ def wprowadz_produkt():
                         writer.writerow([produkt , kategoria, cena,ilosc])
                     st.success(f"✅ Dodano produkt: {produkt}")
     
-
-            
+ 
        
            
 
@@ -85,14 +84,13 @@ def wprowadz_produkt():
 
 def pokaz_df():
     df =pd.read_csv('produkt.csv',header = None, names=["produkt","kategoria","cena","ilosc"], 
-                    delimiter=';')
-    # st.write(st.table(df.values))
-    
+                    delimiter=';')   
     return df
-## Wyświetl wszystko z danej kategorii
 
-##  Ilość produktównw kategorii
-def pokaz_kategoria():             
+
+
+def pokaz_kategoria(): 
+        opis = '''Ilość produktównw kategorii'''            
         df = pokaz_df()
         kategorie_unikalne = df['kategoria'].unique()
         kategoria = st.selectbox("Wybierz kategorie:", kategorie_unikalne)
@@ -102,8 +100,9 @@ def pokaz_kategoria():
         st.write(f'W kategorii jest {ilosc_prod} produktów')
 
 
-'''Wyswietla wszystkie produkty z daną nazwą '''
-def pokaz_produkt():       
+
+def pokaz_produkt():  
+        opis = '''Wyswietla wszystkie produkty z daną nazwą'''   
         df = pokaz_df()
         produkty_unikalne = df['produkt'].unique().tolist()
         produkty_unikalne = ["-- wybierz produkt --"] + produkty_unikalne
@@ -115,8 +114,9 @@ def pokaz_produkt():
             st.dataframe(df_prod, hide_index=True)
             st.write(f'Produktów jest {ilosc_prod} ')   
 
-'''Maksymalna ilosc produktow'''
+
 def prod_max_ilosc(prod):
+    opis = '''Maksymalna ilosc produktow'''
     ilosc_max = prod['ilosc']
     return ilosc_max
 
@@ -204,6 +204,7 @@ if __name__ == "__main__":
                
             ],
         )
+st.header("Koszyk zakupowy")
 if select == "Wprowadź kategorię":   
     wprowadz_kategorie()
 if select == "Wprowadź produkt":
