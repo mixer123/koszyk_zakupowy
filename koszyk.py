@@ -74,13 +74,12 @@ def wprowadz_produkt():
                         writer.writerow([produkt , kategoria, cena,ilosc])
                     st.success(f"✅ Dodano produkt: {produkt}")
     
- 
+
+
 def pokaz_df():
     df =pd.read_csv('produkt.csv',header = None, names=["produkt","kategoria","cena","ilosc"], 
                     delimiter=';')   
     return df
-
-
 
 def pokaz_kategoria(): 
         opis = '''Ilość produktównw kategorii'''            
@@ -105,7 +104,6 @@ def pokaz_produkt():
         if produkt != '-- wybierz produkt --':
             st.dataframe(df_prod, hide_index=True)
             st.write(f'Produktów jest {ilosc_prod} ')   
-
 
 def prod_max_ilosc(prod):
     opis = '''Maksymalna ilosc produktow'''
