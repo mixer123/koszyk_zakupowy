@@ -5,6 +5,7 @@ import pandas as pd
 
 
 def wprowadz_kategorie():
+        opis = '''To jest funkcja tworząca kategorię produktów'''
         with st.form("kat_form", clear_on_submit=True):
        
             kat = st.text_input("Podaj nazwę kategorii:", key="kategoria_form")
