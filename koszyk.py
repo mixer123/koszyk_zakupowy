@@ -43,26 +43,24 @@ def pokaz_kategorie(name_form=None):
 
 
 def wprowadz_produkt():
-        with st.form("prod_form", clear_on_submit=True):
-       
+        with st.form("prod_form", clear_on_submit=True):       
             produkt = st.text_input("Podaj nazwę produktu:", key="produkt_form")
             produkt=produkt.strip()
-            kategoria = pokaz_kategorie("prod_form")
-            
+            kategoria = pokaz_kategorie("prod_form")            
             ilosc = st.number_input(
                     "Podaj ilość:",
-                    min_value=0,     # minimalna wartość
-                    max_value=100,   # maksymalna wartość (opcjonalnie)
-                    step=1,          # krok (1 → tylko liczby całkowite)
-                    value=10         # domyślna wartość
+                    min_value=0,    
+                    max_value=100,   
+                    step=1,          
+                    value=10         
                 )
             cena = st.number_input(
                     "Podaj cenę:",
-                    min_value=1,     # minimalna wartość
-                    max_value=1000,   # maksymalna wartość (opcjonalnie)
-                    step=1,          # krok (1 → tylko liczby całkowite)
-                    value=5         # domyślna wartość
-                )
+                    min_value=1,     
+                    max_value=1000,  
+                    step=1,          
+                    value=5    
+            )     
             submitted = st.form_submit_button("Dodaj produkt")  
             ilosc = int(ilosc)
             if submitted:
@@ -77,11 +75,6 @@ def wprowadz_produkt():
                     st.success(f"✅ Dodano produkt: {produkt}")
     
  
-       
-           
-
-# Analiza koszyka zakupowego
-
 def pokaz_df():
     df =pd.read_csv('produkt.csv',header = None, names=["produkt","kategoria","cena","ilosc"], 
                     delimiter=';')   
@@ -108,8 +101,7 @@ def pokaz_produkt():
         produkty_unikalne = ["-- wybierz produkt --"] + produkty_unikalne
         produkt = st.selectbox("Wybierz produkt:", produkty_unikalne, index=0)      
         df_prod=df[df['produkt'] == produkt]
-        ilosc_prod= df_prod['ilosc'].sum()
-        # st.write(df_prod)
+        ilosc_prod= df_prod['ilosc'].sum()       
         if produkt != '-- wybierz produkt --':
             st.dataframe(df_prod, hide_index=True)
             st.write(f'Produktów jest {ilosc_prod} ')   
@@ -124,7 +116,7 @@ def koszyk_zakupowy():
     produkty_list = []   
     with open("produkt.csv", mode="r", newline="") as csvfile:
         produkty = csv.reader(csvfile, delimiter=';', quotechar='|')       
-        next(produkty)  # jeśli masz nagłówek w CSV
+        next(produkty)  
         for pr in produkty:
             nazwa, kategoria, cena, ilosc = pr
             produkty_list.append({
@@ -134,19 +126,13 @@ def koszyk_zakupowy():
                 "ilosc": int(ilosc)
             })
 
-    # Inicjalizacja koszyka
     if "koszyk" not in st.session_state:
         st.session_state.koszyk = {}
 
-    # Lista nazw produktów do selectbox
     nazwy = [p["nazwa"] for p in produkty_list]
-    produkt = st.selectbox("Wybierz produkt:", nazwy)
-
-    # znajdź produkt w liście
+    produkt = st.selectbox("Wybierz produkt:", nazwy)  
     prod = next((p for p in produkty_list if p["nazwa"] == produkt), None)
-
-    if prod:
-        # teraz dopiero można ustawić ilość z max_value
+    if prod:      
         ilosc = st.number_input(
             "Ilość:",
             min_value=1,
@@ -157,7 +143,7 @@ def koszyk_zakupowy():
         st.error("Nie znaleziono produktu w bazie!")
         ilosc = 1
 
-    # Dodanie do koszyka
+  
     if st.button("➕ Dodaj do koszyka") and prod:
         wartosc = prod["cena"] * ilosc
 
@@ -170,10 +156,7 @@ def koszyk_zakupowy():
                 "cena": prod["cena"],
                 "wartosc": wartosc
             }
-
-        st.success(f"Dodano {ilosc} x {produkt} do koszyka")
-
-    # Wyświetlenie koszyka
+        st.success(f"Dodano {ilosc} x {produkt} do koszyka")  
     if st.button("📋 Pokaż koszyk"):
         if st.session_state.koszyk:
             suma = 0
