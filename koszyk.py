@@ -106,7 +106,7 @@ def pokaz_produkt():
         produkt = st.selectbox("Wybierz produkt:", produkty_unikalne, index=0)      
         df_prod=df[df['produkt'] == produkt]
         ilosc_prod= df_prod['ilosc'].sum()
-        # st.write(df_prod)
+        
         if produkt != '-- wybierz produkt --':
             df_prod = df[df['produkt'] == produkt]
             print(df_prod["ilosc"])
@@ -129,7 +129,7 @@ def pokaz_produkt():
                                      nowa_nazwa, nowa_kategoria, nowa_cena, nowa_ilosc
                                                                              ]
 
-                    # nadpisanie pliku CSV
+                   
                     df.to_csv("produkt.csv", sep=";", index=False)
 
                     st.success(f"✅ Produkt '{produkt}' został zaktualizowany")
