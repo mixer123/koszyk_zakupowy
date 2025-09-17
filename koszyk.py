@@ -7,8 +7,7 @@ import os
 
 def wprowadz_kategorie():
         opis = '''To jest funkcja tworząca kategorię produktów'''
-        with st.form("kat_form", clear_on_submit=True):
-       
+        with st.form("kat_form", clear_on_submit=True):       
             kat = st.text_input("Podaj nazwę kategorii:", key="kategoria_form")
             submitted = st.form_submit_button("Dodaj kategorię")        #
             if submitted:
@@ -44,32 +43,25 @@ def pokaz_kategorie(name_form=None):
 
 
 def wprowadz_produkt():
-    lista_nazw_produktow = []  # zawsze inicjalizujemy listę
-
-    # Sprawdzamy, czy plik istnieje i nie jest pusty
+    lista_nazw_produktow = []
     if os.path.exists("produkt.csv") and os.path.getsize("produkt.csv") > 0:
         with open("produkt.csv", mode="r", newline="") as csvfile:
             reader = csv.reader(csvfile, delimiter=";", quotechar="|", quoting=csv.QUOTE_MINIMAL)
             for row in reader:
-                if len(row) < 4:  # pomijamy puste lub niepełne linie
+                if len(row) < 4:  
                     continue
                 nazwa, kategoria, cena, ilosc = row
                 lista_nazw_produktow.append(nazwa.strip().lower())
 
-    # Debug: lista już istniejących produktów
-    print(lista_nazw_produktow)
+   
 
-    # Formularz Streamlit
     with st.form("prod_form", clear_on_submit=True):
         produkt = st.text_input("Podaj nazwę produktu:", key="produkt_form").strip()
-        kategoria = pokaz_kategorie("prod_form")  # Twoja funkcja do wyboru kategorii
+        kategoria = pokaz_kategorie("prod_form")  
         ilosc = st.number_input("Podaj ilość:", min_value=1, max_value=100, step=1, value=10)
         cena = st.number_input("Podaj cenę:", min_value=1, max_value=1000, step=1, value=5)
-
         submitted = st.form_submit_button("Dodaj produkt")
-
-        if submitted:
-            # Walidacja nazwy
+        if submitted:           
             if not produkt:
                 st.error("❌ Produkt nie może być pusty!")
             elif ";" in produkt:
@@ -85,13 +77,7 @@ def wprowadz_produkt():
                     writer.writerow([produkt, kategoria, cena, int(ilosc)])
                 st.success(f"✅ Dodano produkt: {produkt}")
 
-           
-
-# Analiza koszyka zakupowego
-
-def pokaz_df():
-    # df =pd.read_csv('produkt.csv',header = None, names=["produkt","kategoria","cena","ilosc"], 
-    #                 delimiter=';')   
+def pokaz_df():    
     df =pd.read_csv('produkt.csv',delimiter=';')   
     return df
 
@@ -114,9 +100,7 @@ def pokaz_produkt():
         df = pokaz_df()
         produkty_unikalne = df['produkt'].unique().tolist()
         produkty_unikalne = ["-- wybierz produkt --"] + produkty_unikalne
-        produkt = st.selectbox("Wybierz produkt:", produkty_unikalne, index=0)      
-        
-        # st.write(df_prod)
+        produkt = st.selectbox("Wybierz produkt:", produkty_unikalne, index=0)   
         if produkt != '-- wybierz produkt --':
             df_prod = df[df['produkt'] == produkt]
             print(df_prod["ilosc"])
@@ -124,6 +108,16 @@ def pokaz_produkt():
             st.dataframe(df_prod, hide_index=True)
             st.write(f'Produktów jest {ilosc_prod} ') 
             row = df_prod.iloc[0]
+            with st.form("delete_form"):
+                nazwa = st.text_input("Nazwa produktu", row["produkt"])
+                submitted = st.form_submit_button("💾 Usuń produkt")
+                if submitted:
+                    idx = df[df['produkt'] == produkt].index[0]
+                    df.drop(index=idx, inplace=True)
+                    df.to_csv("produkt.csv", sep=";", index=False)
+                    st.rerun()
+
+
             with st.form("edit_form"):
                 nowa_nazwa = st.text_input("Nazwa produktu", row["produkt"])
                 nowa_kategoria = st.text_input("Kategoria", row["kategoria"])
@@ -132,19 +126,13 @@ def pokaz_produkt():
 
                 submitted = st.form_submit_button("💾 Zapisz zmiany")
 
-                if submitted:
-                    # aktualizacja w DataFrame
-                    idx = df[df['produkt'] == produkt].index[0]  # bierzemy pierwszy indeks
+                if submitted:                    
+                    idx = df[df['produkt'] == produkt].index[0] 
                     df.loc[idx, ['produkt', 'kategoria', 'cena', 'ilosc']] = [
                                      nowa_nazwa, nowa_kategoria, nowa_cena, nowa_ilosc
-                                                                             ]
-
-                    # nadpisanie pliku CSV
+                                                                             ]                    
                     df.to_csv("produkt.csv", sep=";", index=False)
-
                     st.success(f"✅ Produkt '{produkt}' został zaktualizowany")
-
-
 
 
 def prod_max_ilosc(prod):
@@ -167,24 +155,15 @@ def koszyk_zakupowy():
                     "ilosc": int(ilosc)
                 })
 
-    # Inicjalizacja koszyka
+    
     if "koszyk" not in st.session_state:
         st.session_state.koszyk = {}
-
-    # Lista nazw produktów
     nazwy = [p["nazwa"] for p in produkty_list]
-    produkt = st.selectbox("Wybierz produkt:", nazwy)
-
-    # znajdź produkt
+    produkt = st.selectbox("Wybierz produkt:", nazwy)    
     prod = next((p for p in produkty_list if p["nazwa"] == produkt), None)
-
-    if prod:
-        # ile już w koszyku
-        ilosc_w_koszyku = st.session_state.koszyk.get(produkt, {}).get("ilosc", 0)
-
-        # ile można jeszcze dodać
+    if prod:        
+        ilosc_w_koszyku = st.session_state.koszyk.get(produkt, {}).get("ilosc", 0)        
         ilosc_dostepna = prod["ilosc"] - ilosc_w_koszyku
-
         if ilosc_dostepna > 0:
             ilosc = st.number_input(
                 "Ilość:",
@@ -211,8 +190,6 @@ def koszyk_zakupowy():
             st.warning("⚠️ Nie możesz dodać więcej. Produkt wyczerpany.")
     else:
         st.error("Nie znaleziono produktu w bazie!")
-
-    # Wyświetlenie koszyka
     if st.button("📋 Pokaż koszyk"):
         if st.session_state.koszyk:
             suma = 0
@@ -222,87 +199,6 @@ def koszyk_zakupowy():
             st.write(f"💰 **Suma: {suma:.2f} zł**")
         else:
             st.info("Koszyk jest pusty")
-
-
-
-# def koszyk_zakupowy():
-#     produkty_list = []   
-#     with open("produkt.csv", mode="r", newline="") as csvfile:
-#         produkty = csv.reader(csvfile, delimiter=';', quotechar='|')       
-#         next(produkty)  # jeśli masz nagłówek w CSV
-#         for pr in produkty:
-#             nazwa, kategoria, cena, ilosc = pr
-#             produkty_list.append({
-#                 "nazwa": nazwa,
-#                 "kategoria": kategoria,
-#                 "cena": float(cena),
-#                 "ilosc": int(ilosc)
-#             })
-
-#     # Inicjalizacja koszyka
-#     if "koszyk" not in st.session_state:
-#         st.session_state.koszyk = {}
-
-#     # Lista nazw produktów do selectbox
-#     nazwy = [p["nazwa"] for p in produkty_list]
-#     produkt = st.selectbox("Wybierz produkt:", nazwy)
-
-#     # znajdź produkt w liście
-#     prod = next((p for p in produkty_list if p["nazwa"] == produkt), None)
-
-#     if prod:
-#         # teraz dopiero można ustawić ilość z max_value
-#         ilosc = st.number_input(
-#             "Ilość:",
-#             min_value=1,
-#             value=1,
-#             max_value=prod_max_ilosc(prod)
-#         )
-#     else:
-#         st.error("Nie znaleziono produktu w bazie!")
-#         ilosc = 1
-
-#     # Dodanie do koszyka
-    
-#     if st.button("➕ Dodaj do koszyka") and prod:
-#         wartosc = prod["cena"] * ilosc
-
-#         if produkt in st.session_state.koszyk:
-#             st.session_state.koszyk[produkt]["ilosc"] += ilosc
-#             st.session_state.koszyk[produkt]["wartosc"] += wartosc
-#         else:
-#             st.session_state.koszyk[produkt] = {
-#                 "ilosc": ilosc,
-#                 "cena": prod["cena"],
-#                 "wartosc": wartosc
-#             }
-
-#         st.success(f"Dodano {ilosc} x {produkt} do koszyka")
-
-#     # Wyświetlenie koszyka
-#     if st.button("📋 Pokaż koszyk"):
-#         print(st.session_state.koszyk.items())
-#         if st.session_state.koszyk:
-#             suma = 0
-#             for k, v in st.session_state.koszyk.items():
-#                 st.write(f'{k}: {v["ilosc"]} szt. × {v["cena"]:.2f} zł = {v["wartosc"]:.2f} zł')
-#                 suma += v["wartosc"]
-#                 with open("koszyk.csv", mode="a", newline="") as csvfile:
-#                             writer = csv.writer(csvfile, delimiter=";", quotechar="|", quoting=csv.QUOTE_MINIMAL)
-#                             writer.writerow([k , v["ilosc"], v["cena"],v["wartosc"]])
-       
-#             st.write(f"💰 **Suma: {suma:.2f} zł**")
-           
-#         else:
-#             st.info("Koszyk jest pusty")
-#         # return st.session_state.koszyk
-   
-
-
-
-
-         
-
 
 if __name__ == "__main__":
     with st.sidebar:        
@@ -320,10 +216,8 @@ if __name__ == "__main__":
 st.header("Koszyk zakupowy")
 if select == "Wprowadź kategorię":   
     wprowadz_kategorie()
-if select == "Wprowadź produkt":
-    # pokaz_kategorie()
+if select == "Wprowadź produkt":   
     wprowadz_produkt()
-
 if select == "Pokaz kategorię":
     pokaz_kategoria()
 if select == "Pokaz produkt":
