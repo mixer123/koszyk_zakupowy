@@ -6,8 +6,8 @@ import os
 
 
 def wprowadz_kategorie():
-        opis = '''To jest funkcja tworząca kategorię produktów'''
-        with st.form("kat_form", clear_on_submit=True):       
+        with st.form("kat_form", clear_on_submit=True):
+       
             kat = st.text_input("Podaj nazwę kategorii:", key="kategoria_form")
             submitted = st.form_submit_button("Dodaj kategorię")        #
             if submitted:
@@ -85,13 +85,17 @@ def wprowadz_produkt():
 
 
 
-def pokaz_df():    
-    df =pd.read_csv('produkt.csv',delimiter=';')   
+# Analiza koszyka zakupowego
+
+def pokaz_df():
+    df =pd.read_csv('produkt.csv',header = None, names=["produkt","kategoria","cena","ilosc"], 
+                    delimiter=';')   
     return df
 
 
 
-def pokaz_kategoria():             
+def pokaz_kategoria(): 
+        opis = '''Ilość produktównw kategorii'''            
         df = pokaz_df()
         kategorie_unikalne = df['kategoria'].unique()
         kategoria = st.selectbox("Wybierz kategorie:", kategorie_unikalne)
@@ -107,35 +111,16 @@ def pokaz_produkt():
         df = pokaz_df()
         produkty_unikalne = df['produkt'].unique().tolist()
         produkty_unikalne = ["-- wybierz produkt --"] + produkty_unikalne
-        produkt = st.selectbox("Wybierz produkt:", produkty_unikalne, index=0)   
+        produkt = st.selectbox("Wybierz produkt:", produkty_unikalne, index=0)      
+        df_prod=df[df['produkt'] == produkt]
+        ilosc_prod= df_prod['ilosc'].sum()
+        # st.write(df_prod)
         if produkt != '-- wybierz produkt --':
             df_prod = df[df['produkt'] == produkt]
             print(df_prod["ilosc"])
             ilosc_prod= df_prod['ilosc'].sum()
             st.dataframe(df_prod, hide_index=True)
-            st.write(f'Produktów jest {ilosc_prod} ') 
-            row = df_prod.iloc[0]
-            with st.form("edit_form"):
-                nowa_nazwa = st.text_input("Nazwa produktu", row["produkt"])
-                nowa_kategoria = st.text_input("Kategoria", row["kategoria"])
-                nowa_cena = st.number_input("Cena", value=float(row["cena"]), min_value=0.0)
-                nowa_ilosc = st.number_input("Ilość", value=int(row["ilosc"]), min_value=0)
-
-                submitted = st.form_submit_button("💾 Zapisz zmiany")
-
-                if submitted:
-                    
-                    idx = df[df['produkt'] == produkt].index[0]  
-                    df.loc[idx, ['produkt', 'kategoria', 'cena', 'ilosc']] = [
-                                     nowa_nazwa, nowa_kategoria, nowa_cena, nowa_ilosc
-                                                                             ]
-
-                  
-                    df.to_csv("produkt.csv", sep=";", index=False)
-
-                    st.success(f"✅ Produkt '{produkt}' został zaktualizowany")
-
-
+            st.write(f'Produktów jest {ilosc_prod} ')   
 
 
 def prod_max_ilosc(prod):
@@ -148,6 +133,7 @@ def koszyk_zakupowy():
     produkty_list = []   
     with open("produkt.csv", mode="r", newline="") as csvfile:
         produkty = csv.reader(csvfile, delimiter=';', quotechar='|')       
+        next(produkty)  # jeśli masz nagłówek w CSV
         for pr in produkty:
             if len(pr)>0:
                 nazwa, kategoria, cena, ilosc = pr
@@ -158,11 +144,11 @@ def koszyk_zakupowy():
                     "ilosc": int(ilosc)
                 })
 
- 
+    # Inicjalizacja koszyka
     if "koszyk" not in st.session_state:
         st.session_state.koszyk = {}
 
-   
+    # Lista nazw produktów do selectbox
     nazwy = [p["nazwa"] for p in produkty_list]
     produkt = st.selectbox("Wybierz produkt:", nazwy)
 
@@ -170,22 +156,20 @@ def koszyk_zakupowy():
     prod = next((p for p in produkty_list if p["nazwa"] == produkt), None)
 
     if prod:
-       
-        ilosc_w_koszyku = st.session_state.koszyk.get(produkt, {}).get("ilosc", 0)
+        # teraz dopiero można ustawić ilość z max_value
+        ilosc = st.number_input(
+            "Ilość:",
+            min_value=1,
+            value=1,
+            max_value=prod_max_ilosc(prod)
+        )
+    else:
+        st.error("Nie znaleziono produktu w bazie!")
+        ilosc = 1
 
-      
-        ilosc_dostepna = prod["ilosc"] - ilosc_w_koszyku
-
-        if ilosc_dostepna > 0:
-            ilosc = st.number_input(
-                "Ilość:",
-                min_value=1,
-                value=1,
-                max_value=ilosc_dostepna
-            )
-
-            if st.button("➕ Dodaj do koszyka"):
-                wartosc = prod["cena"] * ilosc
+    # Dodanie do koszyka
+    if st.button("➕ Dodaj do koszyka") and prod:
+        wartosc = prod["cena"] * ilosc
 
                 if produkt in st.session_state.koszyk:
                     st.session_state.koszyk[produkt]["ilosc"] += ilosc
@@ -197,13 +181,9 @@ def koszyk_zakupowy():
                         "wartosc": wartosc
                     }
 
-                st.success(f"Dodano {ilosc} x {produkt} do koszyka")
-        else:
-            st.warning("⚠️ Nie możesz dodać więcej. Produkt wyczerpany.")
-    else:
-        st.error("Nie znaleziono produktu w bazie!")
+        st.success(f"Dodano {ilosc} x {produkt} do koszyka")
 
-    
+    # Wyświetlenie koszyka
     if st.button("📋 Pokaż koszyk"):
         if st.session_state.koszyk:
             suma = 0
@@ -213,7 +193,12 @@ def koszyk_zakupowy():
             st.write(f"💰 **Suma: {suma:.2f} zł**")
         else:
             st.info("Koszyk jest pusty")
+   
 
+
+
+
+         
 
 
 if __name__ == "__main__":
